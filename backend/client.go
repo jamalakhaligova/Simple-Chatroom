@@ -12,8 +12,6 @@ type client struct {
 	room     *room
 }
 
-// command is one line typed by a client, e.g. "/msg hello world"
-// becomes {name: "/msg", arg: "hello world"}.
 type command struct {
 	client *client
 	name   string
@@ -26,7 +24,6 @@ func (c *client) readInput(commands chan<- command) {
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			// connection dropped without /quit
 			commands <- command{client: c, name: "/quit"}
 			return
 		}
