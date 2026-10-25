@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Run tests
+        run: go test -v ./...
+
+  scan:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      TRIVY: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.69.3 image --ignore-unfixed --severity HIGH,CRITICAL --exit-code 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose -p chatroom build
+
+      - name: Scan backend image
+        run: $TRIVY chatroom-backend
+
+      - name: Scan frontend image
+        run: $TRIVY chatroom-frontend
+
+      - name: Scan database image
+        run: $TRIVY postgres:17-alpine

@@ -27,5 +27,13 @@ docker compose up --build
 
 Web and telnet users can talk to each other.
 
+#### Tests
+
+```
+cd backend && go test ./...
+```
+
+The tests use an in-memory store, so no database is needed.
+
 #### Database
 Rooms and messages are stored in PostgreSQL (the `db` service, data kept in the `db-data` volume). When you join a room, the last 20 messages are shown. The backend reads the connection string from `DATABASE_URL`.
