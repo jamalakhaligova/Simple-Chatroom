@@ -6,11 +6,11 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type store struct {
+type postgresStore struct {
 	db *sql.DB
 }
 
-func newStore(url string) (*store, error) {
+func newPostgresStore(url string) (*postgresStore, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
@@ -31,15 +31,15 @@ func newStore(url string) (*store, error) {
 		return nil, err
 	}
 
-	return &store{db: db}, nil
+	return &postgresStore{db: db}, nil
 }
 
-func (s *store) saveRoom(name string) error {
+func (s *postgresStore) saveRoom(name string) error {
 	_, err := s.db.Exec("INSERT INTO rooms (name) VALUES ($1) ON CONFLICT DO NOTHING", name)
 	return err
 }
 
-func (s *store) loadRooms() ([]string, error) {
+func (s *postgresStore) loadRooms() ([]string, error) {
 	rows, err := s.db.Query("SELECT name FROM rooms")
 	if err != nil {
 		return nil, err
@@ -57,13 +57,13 @@ func (s *store) loadRooms() ([]string, error) {
 	return rooms, rows.Err()
 }
 
-func (s *store) saveMessage(room, username, body string) error {
+func (s *postgresStore) saveMessage(room, username, body string) error {
 	_, err := s.db.Exec("INSERT INTO messages (room, username, body) VALUES ($1, $2, $3)", room, username, body)
 	return err
 }
 
 // lastMessages returns the latest n messages of a room, oldest first.
-func (s *store) lastMessages(room string, n int) ([]string, error) {
+func (s *postgresStore) lastMessages(room string, n int) ([]string, error) {
 	rows, err := s.db.Query(`
 		SELECT username, body FROM (
 			SELECT id, username, body FROM messages WHERE room = $1 ORDER BY id DESC LIMIT $2

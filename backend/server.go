@@ -5,15 +5,23 @@ import (
 	"strings"
 )
 
+// store saves rooms and messages. It's an interface so tests can use an in-memory version.
+type store interface {
+	saveRoom(name string) error
+	loadRooms() ([]string, error)
+	saveMessage(room, username, body string) error
+	lastMessages(room string, n int) ([]string, error)
+}
+
 // server owns all rooms. Commands are handled one at a time in run(),
 // so rooms and clients never need locks.
 type server struct {
 	rooms    map[string]*room
 	commands chan command
-	store    *store
+	store    store
 }
 
-func newServer(store *store) *server {
+func newServer(store store) *server {
 	s := &server{
 		rooms:    make(map[string]*room),
 		commands: make(chan command),
@@ -32,21 +40,25 @@ func newServer(store *store) *server {
 
 func (s *server) run() {
 	for cmd := range s.commands {
-		c := cmd.client
-		switch cmd.name {
-		case "/user":
-			s.setName(c, cmd.arg)
-		case "/join":
-			s.join(c, cmd.arg)
-		case "/rooms":
-			s.listRooms(c)
-		case "/msg":
-			s.message(c, cmd.arg)
-		case "/quit":
-			s.quit(c)
-		default:
-			c.sendError("Unknown command: " + cmd.name)
-		}
+		s.handle(cmd)
+	}
+}
+
+func (s *server) handle(cmd command) {
+	c := cmd.client
+	switch cmd.name {
+	case "/user":
+		s.setName(c, cmd.arg)
+	case "/join":
+		s.join(c, cmd.arg)
+	case "/rooms":
+		s.listRooms(c)
+	case "/msg":
+		s.message(c, cmd.arg)
+	case "/quit":
+		s.quit(c)
+	default:
+		c.sendError("Unknown command: " + cmd.name)
 	}
 }
 

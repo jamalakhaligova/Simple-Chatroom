@@ -11,7 +11,7 @@ func main() {
 	if dbURL == "" {
 		dbURL = "postgres://chat:chat@localhost:5432/chat"
 	}
-	store, err := newStore(dbURL)
+	store, err := newPostgresStore(dbURL)
 	if err != nil {
 		log.Fatalf("Unable to open database: %v", err)
 	}
